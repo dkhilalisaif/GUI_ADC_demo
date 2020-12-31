@@ -1,0 +1,325 @@
+﻿$version 10.00
+
+// This is the root component of the entire GUI application.
+$rect <20,20,220,60>
+$output false
+class Application : Core::Root
+{
+  $rect <500,0,700,40>
+  inherited property Bounds = <0,0,480,272>;
+
+  // To do:
+  // 
+  // - The simplest way to compose the appearance of the application is to use the \
+  // 'Views' and 'Widgets' from the Gallery.
+  // 
+  // - To react to touch or keyboard events use the templates from the Gallery folder \
+  // 'Event Handlers'.
+  // 
+  // - To perform transitions (animations) use the templates from the Gallery folder \
+  // 'Effects'.
+  // 
+  // - To store values use the 'Variable', 'Array' and 'Property' templates available \
+  // in the Gallery folder 'Chora'.
+  // 
+  // - To implement behavior use the 'Method' and 'Slot Method' templates available \
+  // in the Gallery folder 'Chora'.
+  note legend Note1
+  {
+    attr Bounds = <0,290,780,490>;
+  }
+
+  // This is a filled rectangle view.
+  $rect <20,20,160,60>
+  object Views::Rectangle Rectangle
+  {
+    preset Bounds = <0,0,480,272>;
+    preset Color = #000000FF;
+  }
+
+  // This is an ordinary text view.
+  $rect <20,20,160,60>
+  object Views::Text Text
+  {
+    preset Bounds = <17,17,165,52>;
+    preset String = "ADC demo:";
+    preset Font = Application::Font;
+    preset Color = #86C76EFF;
+  }
+
+  $rect <500,40,700,80>
+  var Application::DeviceClass Device = Application::Device;
+
+  // Property Observer
+  note group Note2
+  {
+    attr Bounds = <500,110,1040,210>;
+  }
+
+  $rect <540,150,740,190>
+  object Core::PropertyObserver PropertyObserver
+  {
+    preset OnEvent = onEvent;
+    preset Outlet = ^Application::Device.ADCValue;
+  }
+
+  // This slot method is executed when the associated property observer 'PropertyObserver' \
+  // is notified.
+  $rect <740,150,940,190>
+  slot onEvent
+  {
+    /*
+       HINT 1:
+
+       You can evaluate the 'sender' parameter. It refers to the observer
+       this method has been called from. This is very useful if multiple
+       property observer are connected to one and the same 'onEvent'
+       method:
+
+       if ( sender == Observer1 )
+         trace "The event comes from the Observer1";
+
+       if ( sender == Observer2 )
+         trace "... or from the Observer2";
+    */
+    VoltageDisplay.CurrentValue = (((Device.ADCValue)*3300)/255);
+  }
+
+  // The object 'PropertyObserver' is a handler of property notifications. When the \
+  // affected property is notified, the observer calls the associated slot method \
+  // 'onEvent' automatically. Within the 'onEvent' method you can react to the notification. \
+  // The method 'onEvent' exists for your convenience only. You can remove it and \
+  // connect the observer with another slot method. See inline documentation inside \
+  // the method.
+  // 
+  // Don't forget to connect the observer with the property of interest. To do this \
+  // set the property 'Outlet' of the observer to refer to the desired property.
+  note legend Note
+  {
+    attr Bounds = <1050,110,1550,310>;
+  }
+
+  $rect <20,20,160,60>
+  object Views::Text Text1
+  {
+    preset Bounds = <0,238,251,268>;
+    preset String = "Made with love in Tunisia";
+    preset Font = Resources::FontMedium;
+  }
+
+  $rect <20,20,160,60>
+  object Views::Rectangle Rectangle1
+  {
+    preset Bounds = <91,76,394,176>;
+    preset Color = #666666DE;
+  }
+
+  $rect <20,20,160,60>
+  object WidgetSet::ValueDisplay VoltageDisplay
+  {
+    preset Bounds = <100,101,381,151>;
+    preset Unit = "mVolt";
+    preset Precision = 1;
+    preset Appearance = WidgetSet::ValueDisplay_Large;
+  }
+}
+
+// To do:
+// 
+// - Open the 'Application' component for editing. It represents your entire GUI. \
+// Use widgets, views, event handlers and effects from the Gallery to assemble there \
+// your desired GUI look and feel.
+// 
+// - Create your own GUI components, widgets, panels, etc. The Gallery folder 'Component \
+// Templates' contains for this purpose various templates you can simply add to the \
+// unit and thus start your own component development.
+// 
+// - You can add your own bitmap and font resources to the unit. Use the templates \
+// 'Bitmap Resource' and 'Font Resource' from the Gallery folder 'Resources' for \
+// this purpose.
+// 
+// - You can add here also constants to store e.g. multilingual text fragments. Use \
+// for this purpose the template 'Constant' from the Gallery folder 'Chora'.
+// 
+// - To add an interface for communication with the target device use the template \
+// 'Device Interface' from the Gallery folder 'Device'.
+note legend Note1
+{
+  attr Bounds = <20,80,710,390>;
+}
+
+// This is a font resource.
+$rect <230,20,430,60>
+$output false
+resource Resources::Font Font
+{
+  attr fontname FontName = Arial;
+  attr fontheight Height = 32;
+  attr fontquality Quality = High;
+  attr fontranges Ranges = 0x20-0xFF;
+  attr fontaspectratio AspectRatio = 1.0;
+  attr fontbold Bold = false;
+  attr fontitalic Italic = false;
+  attr fontkerning Kerning = true;
+  attr fontheightmode HeightMode = Compatible;
+  attr fontrowdistance RowDistance;
+}
+
+$rect <20,-30,220,10>
+inline Inline
+{
+  /* include the device driver header file to get access for the device class */
+  #include "DeviceDriver.h"
+}
+
+$rect <20,-120,220,-80>
+$output false
+class DeviceClass : Templates::DeviceClass
+{
+  // This property represents an individual setting or state value existing within \
+  // the device.
+  $rect <220,60,420,100>
+  property int32 ADCValue = 0;
+
+  // This method is intended to be called by the device to notify the GUI application \
+  // about an alternation of its setting or state value.
+  $rect <20,60,220,100>
+  $output true
+  method void UpdateADCValue( arg int32 aNewValue )
+  {
+    // Only if the reported value does differ from the one stored currently in the property.
+    if ( aNewValue != pure ADCValue )
+    {
+      // Remember the new value in the internal memory of the property.
+      pure ADCValue = aNewValue;
+
+      // Notify all associated property observers.
+      notifyobservers ^ADCValue;
+    }
+  }
+
+  // This object represents an individual system event.
+  $rect <230,280,430,320>
+  object Core::SystemEvent SystemEvent;
+
+  // This method is intended to be called by the device to notify the GUI application \
+  // about a particular system event.
+  $rect <20,280,220,320>
+  $output true
+  method void TriggerEvent()
+  {
+    // Just trigger the system event. All associated system event handler
+    // will then be notified automatically.
+    SystemEvent.Trigger( null, false );
+
+    /*
+       HINT 1:
+
+       When triggering the event you can pass an optional 'context' object.
+       With it additional event specific data can be attached at the event
+       and dispatched with it. All notified system event handler can thus
+       evaluate this 'context' information.
+
+       To do this, you will need to define a particular 'context' class
+       suitable to store the event specific information. Then create an
+       instance of the class, initialize it with all the specific context
+       data and finally pass the instance in the first parameter of the
+       Trigger() method:
+
+
+       var YourUnit::ContextClass context = new YourUnit::ContextClass;
+
+       context.SomeData1 = ...
+       context.SomeData2 = ...
+
+       SystemEvent.Trigger( context, false );
+
+
+       You can add parameters to the method in order to simply receive
+       values from the device.
+    */
+
+    /*
+       HINT 2:
+
+       When triggering a system event you can determine its priority. Per
+       default system events are delivered strictly in the order in which
+       they have been triggered. When you pass 'true' in the last parameter
+       of Trigger() you can force the event to be dispatched early:
+
+       SystemEvent.Trigger( null, true );
+    */
+  }
+
+  // Example of an interface to read and modify a device setting or state value
+  note group Note1
+  {
+    attr Bounds = <10,10,630,110>;
+  }
+
+  // Example of an interface to react to a system event
+  note group Note2
+  {
+    attr Bounds = <10,230,630,330>;
+  }
+
+  // The property 'Property' represents an individual setting or state value existing \
+  // within the device. Through the associated 'onset' method all write operations \
+  // to the property can be directed to your particular device API. The read accesses, \
+  // in contrast, are handled internally by using the last known value of the property. \
+  // See inline documentation inside the 'onset' method 'OnSetProperty'.
+  // 
+  // The method 'UpdateProperty', in turn, is intended to be called by the device \
+  // to notify the GUI application about an alternation of a setting or state value \
+  // represented by the property 'Property'. See inline documentation inside the \
+  // method.
+  // 
+  // You will eventually need to change the data type of the property to match the \
+  // data in your device (e.g. to 'bool', 'uint32', or 'string', etc.). Use for this \
+  // purpose the attribute 'Type' of the property itself. Accordingly the declaration \
+  // of the 'UpdateProperty' method may need an adaptation.
+  note legend Note4
+  {
+    attr Bounds = <700,10,1540,220>;
+  }
+
+  note arrow Note5
+  {
+    attr Point1 = <630,60>;
+    attr Point2 = <700,60>;
+  }
+
+  // The object 'SystemEvent' represents an individual system event. When the system \
+  // event is triggered all associated system event handler are notified automatically.
+  // 
+  // The method 'TriggerEvent' method is intended to be called by the device to notify \
+  // the GUI application about the particular system event represented by the object \
+  // 'SystemEvent'. This method exists for your convenience only and is optional. \
+  // See inline documentation inside the method.
+  note legend Note6
+  {
+    attr Bounds = <700,230,1540,370>;
+  }
+
+  note arrow Note7
+  {
+    attr Point1 = <630,280>;
+    attr Point2 = <700,280>;
+  }
+}
+
+$rect <220,-120,420,-80>
+autoobject Application::DeviceClass Device;
+
+// The class 'Application::DeviceClass' implements the interface between the GUI \
+// application and the device. Within the class you can react to system events sent \
+// by the device, exchange data with the device or send commands to the device. You \
+// are completely free in the design of this interface.
+// 
+// The object 'Device' represents the instance of the device interface. It exists \
+// for your convenience. As an autoobject it is globally available for all GUI components \
+// within your project.
+note legend Note
+{
+  attr Bounds = <450,-120,950,60>;
+}
